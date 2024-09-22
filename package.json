@@ -8,6 +8,7 @@
     "@hono/zod-openapi": "^0.16.0",
     "@prisma/client": "^5.19.1",
     "@types/node": "^22.5.5",
+    "bcryptjs": "^2.4.3",
     "hono": "^4.6.2",
     "prisma": "^5.19.1",
     "ts-node": "^10.9.2",
