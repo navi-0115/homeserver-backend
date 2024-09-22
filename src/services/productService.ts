@@ -7,12 +7,20 @@ export async function getAllProductsService() {
 
 // Fetch product by id
 export async function getProductByIdService(id: string) {
-  return await prisma.product.findUnique({ where: { id } });
+  const product = await prisma.product.findUnique({ where: { id } });
+  if (!product) {
+    throw new Error(`Product with id ${id} not found`);
+  }
+  return product;
 }
 
 // Fetch product by slug
 export async function getProductBySlugService(slug: string) {
-  return await prisma.product.findUnique({ where: { slug } });
+  const product = await prisma.product.findUnique({ where: { slug } });
+  if (!product) {
+    throw new Error(`Product with slug ${slug} not found`);
+  }
+  return product;
 }
 
 // Create a new product
@@ -52,10 +60,18 @@ export async function updateProductService(
       .replace(/[^a-z0-9-]/g, ""); // Create slug from name
   }
 
-  return await prisma.product.update({ where: { id }, data });
+  const product = await prisma.product.update({ where: { id }, data });
+  if (!product) {
+    throw new Error(`Product with id ${id} not found`);
+  }
+  return product;
 }
 
 // Delete a product by ID
 export async function deleteProductByIdService(id: string) {
-  return await prisma.product.delete({ where: { id } });
+  const productExist = await prisma.product.delete({ where: { id } });
+  if (!productExist) {
+    throw new Error(`Product with id ${id} not found`);
+  }
+  return productExist;
 }
