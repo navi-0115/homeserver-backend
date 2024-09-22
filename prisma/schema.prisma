@@ -13,12 +13,61 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-
 model User {
-  id   Int   @id @default(autoincrement())
-  username String @db.VarChar(20)
-  email String @unique
-  password  String 
+  id        String   @id @default(cuid())
+  name      String   @db.VarChar(20)
+  email     String   @unique
+  password  String
+  avatarUrl String?  @db.VarChar(255)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  orders Order[]
+
+  @@map("users")
+}
+
+model Product {
+  id          String         @id @default(cuid())
+  name        String
+  imageUrl    String?        @db.Text
+  description String?
+  slug        String?
+  price       Int
+  stock       Int
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+  products    OrderProduct[]
+
+  @@map("products")
+}
+
+model Order {
+  id          String   @id @default(cuid())
+  status      Int
+  totalAmount Int
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  User   User   @relation(fields: [userId], references: [id])
+  userId String
+
+  products OrderProduct[] @relation("OrderProducts")
+
+  @@map("orders")
+}
+
+model OrderProduct {
+  id        String   @id @default(cuid())
+  orderId   String
+  productId String
+  quantity  Int
+  price     Int
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  product Product @relation(fields: [productId], references: [id])
+  order   Order   @relation("OrderProducts", fields: [orderId], references: [id])
+
+  @@map("orderProducts")
 }
