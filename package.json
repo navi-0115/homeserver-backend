@@ -1,7 +1,12 @@
 {
-  "name": "my-app",
+  "name": "homeserver-api",
+  "version": "1.0.0",
+  "prisma": {
+    "seed": "bun run prisma/seed.ts"
+  },
   "scripts": {
-    "dev": "bun run --hot src/index.ts"
+    "dev": "bun run --hot src/index.ts",
+    "start": "bun prisma generate && bun prisma migrate deploy && bun run src/index.ts && bun run prisma db seed"
   },
   "dependencies": {
     "@hono/swagger-ui": "^0.4.1",
