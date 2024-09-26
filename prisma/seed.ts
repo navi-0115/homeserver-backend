@@ -35,7 +35,7 @@ async function main() {
       description:
         "The Raspberry Pi 4 Model B is the latest version of the popular single-board computer.",
       slug: "raspberry-pi-4",
-      price: 55, // Price in USD
+      price: 2000000,
       stock: 150,
     },
   });
@@ -49,7 +49,7 @@ async function main() {
       description:
         "The Raspberry Pi 400 is a complete personal computer built into a compact keyboard.",
       slug: "raspberry-pi-400",
-      price: 70,
+      price: 1700000,
       stock: 100,
     },
   });
@@ -63,7 +63,7 @@ async function main() {
       description:
         "The Odroid N2+ is a powerful single-board computer designed for high-performance projects.",
       slug: "odroid-n2+",
-      price: 80,
+      price: 800000,
       stock: 60,
     },
   });
@@ -72,7 +72,7 @@ async function main() {
   const order1 = await prisma.order.create({
     data: {
       status: 1, // e.g., 1 for 'Pending'
-      totalAmount: 110, // Sum of the order
+      totalAmount: 3700000, // Sum of the order price
       userId: user1.id,
       products: {
         create: [
@@ -95,7 +95,7 @@ async function main() {
   const order2 = await prisma.order.create({
     data: {
       status: 2, // e.g., 2 for 'Shipped'
-      totalAmount: 80, // Sum of the order
+      totalAmount: 800000, // Sum of the order
       userId: user2.id,
       products: {
         create: [
