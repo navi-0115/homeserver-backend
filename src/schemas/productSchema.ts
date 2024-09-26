@@ -11,7 +11,10 @@ export const createProductSchema = z.object({
     .number()
     .min(0, "Price must be greater than 0")
     .openapi({ example: 120000 }),
-  description: z.string().optional(),
+  description: z.string().optional().openapi({
+    example:
+      "With 2–3× the speed of the previous generation, and featuring silicon designed in‑house for the best possible performance, we’ve redefined the Raspberry Pi experience.",
+  }),
   // image: z.string().url().optional().openapi({
   //   example: "https://studio.youtube.com/channel/UCp_B66Jg1nCh04bdciEaXJg",
   // }),
