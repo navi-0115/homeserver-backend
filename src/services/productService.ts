@@ -6,20 +6,20 @@ export async function getAllProductsService() {
 }
 
 // Fetch product by id
-export async function getProductByIdService(id: string) {
-  const product = await prisma.product.findUnique({ where: { id } });
-  if (!product) {
-    throw new Error(`Product with id ${id} not found`);
-  }
-  return product;
-}
+// export async function getProductByIdService(id: string) {
+//   const product = await prisma.product.findUnique({ where: { id } });
+//   if (!product) {
+//     throw new Error(`Product with id ${id} not found`);
+//   }
+//   return product;
+// }
 
 // Fetch product by slug
 export async function getProductBySlugService(slug: string) {
-  const product = await prisma.product.findUnique({ where: { slug } });
-  if (!product) {
-    throw new Error(`Product with slug ${slug} not found`);
-  }
+  const product = await prisma.product.findFirst({ where: { slug } });
+  // if (!product) {
+  //   throw new Error(`Product with slug ${slug} not found`);
+  // }
   return product;
 }
 
@@ -61,7 +61,7 @@ export async function updateProductService(
   }
 
   // Check if the identifier is a slug or an ID
-  const isSlug = identifier.includes("-");
+  const isSlug = identifier.includes("c");
 
   const product = await prisma.product.update({
     where: isSlug ? { slug: identifier } : { id: identifier },
