@@ -14,7 +14,7 @@ export default new OpenAPIHono({ strict: false })
       version: "1.0.0",
       title: "Homeserver API",
       description:
-        "API for managing categories, sites, and contacts for Muslim Friendly Taiwan tourism",
+        "API for online store that provides a platform for individuals to purchase home server products, such as Raspberry Pi, single-board computers, and related accessories.",
     },
   })
 
