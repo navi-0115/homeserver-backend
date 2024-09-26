@@ -35,9 +35,9 @@ export const updateProductSchema = z.object({
     .min(0, "Price must be greater than 0")
     .openapi({ example: 120000 }),
   description: z.string().optional(),
-  image: z.string().url().optional().openapi({
-    example: "https://studio.youtube.com/channel/UCp_B66Jg1nCh04bdciEaXJg",
-  }),
+  // imageURL: z.string().url().optional().openapi({
+  //   example: "https://studio.youtube.com/channel/UCp_B66Jg1nCh04bdciEaXJg",
+  // }),
   stock: z
     .number()
     .min(0, "Stock must be greater than 0")
@@ -46,7 +46,7 @@ export const updateProductSchema = z.object({
 
 // for product id schema
 export const productIdSchema = z.object({
-  id: z.coerce.number().int().min(1),
+  id: z.coerce.string().min(1),
 });
 
 // for product slug schema

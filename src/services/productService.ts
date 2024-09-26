@@ -41,14 +41,14 @@ export async function createProductService(data: {
   });
 }
 
-// Update a product by ID
+// Update a product by ID or Slug
 export async function updateProductService(
-  id: string,
+  identifier: string, // Can be either ID or slug
   data: {
     name?: string;
     price?: number;
     description?: string;
-    image?: string;
+    imageUrl?: string;
     stock?: number;
     slug?: string;
   }
@@ -57,13 +57,23 @@ export async function updateProductService(
     data.slug = data.name
       .toLowerCase()
       .replace(/\s+/g, "-")
-      .replace(/[^a-z0-9-]/g, ""); // Create slug from name
+      .replace(/[^a-z0-9-]/g, "");
   }
 
-  const product = await prisma.product.update({ where: { id }, data });
+  // Check if the identifier is a slug or an ID
+  const isSlug = identifier.includes("-");
+
+  const product = await prisma.product.update({
+    where: isSlug ? { slug: identifier } : { id: identifier },
+    data,
+  });
+
   if (!product) {
-    throw new Error(`Product with id ${id} not found`);
+    throw new Error(
+      `Product with ${isSlug ? "slug" : "id"} '${identifier}' not found`
+    );
   }
+
   return product;
 }
 

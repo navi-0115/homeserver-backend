@@ -126,7 +126,7 @@ productsRoute.openapi(
     path: "/{id}",
     description: "Update a product by ID",
     request: {
-      params: productIdSchema, // Use product ID schema for validation
+      params: productIdSchema,
       body: {
         content: {
           "application/json": {
@@ -169,7 +169,7 @@ productsRoute.openapi(
     path: "/slug/{slug}",
     description: "Update a product by slug",
     request: {
-      params: productSlugSchema, // Use product slug schema for validation
+      params: productSlugSchema,
       body: {
         content: {
           "application/json": {
@@ -212,7 +212,7 @@ productsRoute.openapi(
     path: "/{id}",
     description: "Delete product by ID",
     request: {
-      params: productIdSchema, // Validate the `id` parameter
+      params: productIdSchema,
     },
     responses: {
       200: {
