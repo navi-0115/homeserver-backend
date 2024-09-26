@@ -44,7 +44,7 @@ productsRoute.openapi(
 productsRoute.openapi(
   {
     method: "get",
-    path: "/slug/{slug}",
+    path: "/{slug}",
     description: "Get product by slug",
     request: {
       params: productSlugSchema,
@@ -166,7 +166,7 @@ productsRoute.openapi(
 productsRoute.openapi(
   {
     method: "put",
-    path: "/slug/{slug}",
+    path: "/{slug}",
     description: "Update a product by slug",
     request: {
       params: productSlugSchema,
