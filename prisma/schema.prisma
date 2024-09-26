@@ -32,7 +32,7 @@ model Product {
   name        String
   imageUrl    String?        @db.Text
   description String?
-  slug        String?        @unique
+  slug        String?
   price       Int
   stock       Int
   createdAt   DateTime       @default(now())

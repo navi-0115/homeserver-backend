@@ -15,11 +15,19 @@ export async function getAllProductsService() {
 // }
 
 // Fetch product by slug
+// Fetch product by slug
 export async function getProductBySlugService(slug: string) {
-  const product = await prisma.product.findFirst({ where: { slug } });
-  // if (!product) {
-  //   throw new Error(`Product with slug ${slug} not found`);
-  // }
+  // Ensure slug is in lowercase before querying
+  slug = slug.toLowerCase();
+
+  const product = await prisma.product.findUnique({
+    where: { slug },
+  });
+
+  if (!product) {
+    throw new Error(`Product with slug ${slug} not found`);
+  }
+
   return product;
 }
 
