@@ -23,7 +23,7 @@ WORKDIR /app
 COPY --from=builder /app /app
 
 # Run Prisma generate
-RUN bun run prisma generate
+# RUN bun run prisma generate
 
 # Expose port for the application
 EXPOSE 3000
