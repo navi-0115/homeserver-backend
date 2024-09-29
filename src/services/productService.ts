@@ -15,9 +15,8 @@ export async function getAllProductsService() {
 // }
 
 // Fetch product by slug
-// Fetch product by slug
 export async function getProductBySlugService(slug: string) {
-  // Ensure slug is in lowercase before querying
+  // lowercase
   slug = slug.toLowerCase();
 
   const product = await prisma.product.findUnique({
@@ -42,7 +41,7 @@ export async function createProductService(data: {
   const slug = data.name
     .toLowerCase()
     .replace(/\s+/g, "-")
-    .replace(/[^a-z0-9-]/g, ""); // Create slug from name
+    .replace(/[^a-z0-9-]/g, "");
 
   return await prisma.product.create({
     data: { ...data, slug },
@@ -51,7 +50,7 @@ export async function createProductService(data: {
 
 // Update a product by ID or Slug
 export async function updateProductService(
-  identifier: string, // Can be either ID or slug
+  identifier: string,
   data: {
     name?: string;
     price?: number;
