@@ -25,7 +25,7 @@ async function main() {
     },
   });
 
-  // Create some products (real-world data about Raspberry Pi and related devices)
+  // Create some products
   const product1 = await prisma.product.upsert({
     where: { slug: "raspberry-pi-4" },
     update: {},
@@ -71,8 +71,8 @@ async function main() {
   // Create an order for user1
   const order1 = await prisma.order.create({
     data: {
-      status: 1, // e.g., 1 for 'Pending'
-      totalAmount: 3700000, // Sum of the order price
+      status: 1,
+      totalAmount: 3700000,
       userId: user1.id,
       products: {
         create: [
@@ -94,8 +94,8 @@ async function main() {
   // Create an order for user2
   const order2 = await prisma.order.create({
     data: {
-      status: 2, // e.g., 2 for 'Shipped'
-      totalAmount: 800000, // Sum of the order
+      status: 2,
+      totalAmount: 800000,
       userId: user2.id,
       products: {
         create: [
