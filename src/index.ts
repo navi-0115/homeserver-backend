@@ -1,58 +1,38 @@
-import { Hono } from "hono";
 import { swaggerUI } from "@hono/swagger-ui";
-import { cors } from "hono/cors";
 import { OpenAPIHono } from "@hono/zod-openapi";
+import { cors } from "hono/cors";
+import { logger } from "hono/logger";
 import { productsRoute } from "./routes/productRoutes";
 
-export default new OpenAPIHono({ strict: false })
-  .route("/api/products", productsRoute)
+const app = new OpenAPIHono();
 
-  // OpenAPI documentation
-  .doc31("/doc", {
-    openapi: "3.1.0",
-    info: {
-      version: "1.0.0",
-      title: "Homeserver API",
+// Web routes
+app.use(logger());
+app.get("/", (c) => {
+  return c.json(
+    {
       description:
-        "API for online store that provides a platform for individuals to purchase home server products, such as Raspberry Pi, single-board computers, and related accessories.",
+        "Homeserver API - A platform to purchase home server products such as Raspberry Pi, single-board computers, and related accessories.",
+      ui: `/ui`,
     },
-  })
+    200
+  );
+});
 
-  // Swagger UI
-  .get("/api", swaggerUI({ url: "/doc" }));
+// Swagger UI documentation
+app.get("/ui", swaggerUI({ url: "/spec.json" }));
+app.doc("/spec.json", {
+  openapi: "3.1.0",
+  info: {
+    version: "1.0.0",
+    title: "Homeserver API",
+    description:
+      "API for online store that provides a platform for individuals to purchase home server products, such as Raspberry Pi, single-board computers, and related accessories.",
+  },
+});
 
-// const app = new Hono(); // Create main Hono app instance
-// const api = new OpenAPIHono({ strict: false }); //
+// API routes
+app.use("*", cors());
+app.route("/api/products", productsRoute);
 
-// // Define the API routes
-// api.route("/api/products", productsRoute);
-
-// // OpenAPI documentation route
-// api.doc31("/doc", {
-//   openapi: "3.1.0",
-//   info: {
-//     version: "1.0.0",
-//     title: "Muslim Friendly API",
-//     description:
-//       "API for managing products, sites, and contacts for Muslim Friendly Taiwan tourism",
-//   },
-// });
-
-// // Swagger UI
-// app.get("/api", swaggerUI({ url: "/doc" }));
-
-// app.use(
-//   "*",
-//   cors({
-//     origin: (origin) => {
-//       const allowedOrigins = ["http://example.com"];
-//       return allowedOrigins.includes(origin) || !origin ? origin : null;
-//     },
-//     credentials: true,
-//   })
-// );
-
-// // Mount the API on the main app
-// app.route("/api", api);
-
-// export default app;
+export default app;
