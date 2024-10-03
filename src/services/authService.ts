@@ -30,7 +30,7 @@ export const register = async (data: z.infer<typeof registerSchema>) => {
     },
   });
 
-  return { name: user.name, email: user.email };
+  return { name: user.name };
 };
 
 /**

@@ -54,6 +54,9 @@ authRoute.openapi(
         { status: "failed", error: error.message || "Registration failed!" },
         400
       );
+      select: {
+        name: true;
+      }
     }
   }
 );
