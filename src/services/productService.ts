@@ -19,7 +19,7 @@ export async function getProductBySlugService(slug: string) {
   // lowercase
   slug = slug.toLowerCase();
 
-  const product = await prisma.product.findUnique({
+  const product = await prisma.product.findFirst({
     where: { slug },
   });
 
@@ -50,7 +50,7 @@ export async function createProductService(data: {
 
 // Update a product by ID or Slug
 export async function updateProductService(
-  identifier: string,
+  id: string,
   data: {
     name?: string;
     price?: number;
@@ -67,18 +67,10 @@ export async function updateProductService(
       .replace(/[^a-z0-9-]/g, "");
   }
 
-  // Check if the identifier is a slug or an ID
-  const isSlug = identifier.includes("c");
-
-  const product = await prisma.product.update({
-    where: isSlug ? { slug: identifier } : { id: identifier },
-    data,
-  });
+  const product = await prisma.product.update({ where: { id }, data });
 
   if (!product) {
-    throw new Error(
-      `Product with ${isSlug ? "slug" : "id"} '${identifier}' not found`
-    );
+    throw new Error(`Product with ${id}`);
   }
 
   return product;

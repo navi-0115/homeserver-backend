@@ -14,13 +14,14 @@ datasource db {
 }
 
 model User {
-  id        String   @id @default(cuid())
-  name      String   @db.VarChar(20)
-  email     String   @unique
+  id        String      @id @default(cuid())
+  name      String      @db.VarChar(20)
+  email     String      @unique
   password  String
-  avatarUrl String?  @db.VarChar(255)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  avatarUrl String?     @db.VarChar(255)
+  tokens    UserToken[] @relation("UserTokens")
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
 
   orders Order[]
 
@@ -70,4 +71,18 @@ model OrderProduct {
   order   Order   @relation("OrderProducts", fields: [orderId], references: [id])
 
   @@map("orderProducts")
+}
+
+model UserToken {
+  id        String   @id @default(cuid())
+  userId    String
+  token     String
+  issuedAt  DateTime @default(now())
+  expiresAt DateTime
+  revoked   Boolean  @default(false)
+
+  user User @relation("UserTokens", fields: [userId], references: [id])
+
+  @@index([userId, token])
+  @@map("user_tokens")
 }
