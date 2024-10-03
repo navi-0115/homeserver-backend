@@ -1,7 +1,7 @@
 import type { Context } from "hono";
 import { OpenAPIHono } from "@hono/zod-openapi";
-import { login, register, regenToken, logout } from "@/services/authService";
-import { registerSchema, loginSchema } from "@/schemas/authSchema";
+import { login, register, regenToken, logout } from "../services/authService";
+import { registerSchema, loginSchema } from "../schemas/authSchema";
 import { getCookie, setCookie } from "hono/cookie";
 
 const authRoute = new OpenAPIHono();
