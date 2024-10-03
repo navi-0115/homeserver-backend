@@ -1,61 +1,144 @@
-import { Hono } from "hono";
-import bcrypt from "bcrypt";
-import { zValidator } from "@hono/zod-validator";
-import { generateToken } from "../services/jwtService";
-import { PrismaClient } from "@prisma/client";
-import { registerSchema, loginSchema } from "../schemas/authSchemas";
+import type { Context } from "hono";
+import { OpenAPIHono } from "@hono/zod-openapi";
+import { login, register, regenToken, logout } from "@/services/authService";
+import { registerSchema, loginSchema } from "@/schemas/authSchema";
+import { getCookie, setCookie } from "hono/cookie";
 
-const authRoutes = new Hono();
-const prisma = new PrismaClient();
+const authRoute = new OpenAPIHono();
+const API_TAGS = ["Auth"];
 
-// Registration route
-authRoutes.post("/register", zValidator("json", registerSchema), async (c) => {
-  const { username, email, password } = c.req.valid("json");
-
-  // Check if user exists
-  const existingUser = await prisma.user.findUnique({ where: { email } });
-  if (existingUser) {
-    return c.json({ error: "User already exists" }, 400);
-  }
-
-  // Hash the password
-  const hashedPassword = await bcrypt.hash(password, 10);
-
-  // Create user
-  const user = await prisma.user.create({
-    data: {
-      username,
-      email,
-      password: hashedPassword,
-    },
+const setTokenCookie = (c: Context, refreshToken: string) => {
+  setCookie(c, "refreshToken", refreshToken, {
+    httpOnly: true,
+    secure: true,
+    sameSite: "Strict",
+    maxAge: 60 * 60 * 24 * 30,
   });
+};
 
-  // Generate JWT token
-  const token = generateToken(user.id);
+// Register Route
+authRoute.openapi(
+  {
+    method: "post",
+    path: "/register",
+    summary: "Register a new user",
+    description:
+      "Register a new user with name, email, password, and confirm password.",
+    request: {
+      body: {
+        content: {
+          "application/json": {
+            schema: registerSchema,
+          },
+        },
+      },
+    },
+    responses: {
+      201: {
+        description: "User successfully registered",
+      },
+      400: {
+        description: "Invalid input or registration failed",
+      },
+    },
+    tags: API_TAGS,
+  },
+  async (c: Context) => {
+    const body = await c.req.json();
 
-  return c.json({ message: "User registered", token });
-});
-
-// Login route
-authRoutes.post("/login", zValidator("json", loginSchema), async (c) => {
-  const { email, password } = c.req.valid("json");
-
-  // Check if user exists
-  const user = await prisma.user.findUnique({ where: { email } });
-  if (!user) {
-    return c.json({ error: "Invalid email or password" }, 400);
+    try {
+      const user = await register(body);
+      return c.json({ status: "success", data: user }, 201);
+    } catch (error: Error | any) {
+      return c.json(
+        { status: "failed", error: error.message || "Registration failed!" },
+        400
+      );
+    }
   }
+);
 
-  // Compare passwords
-  const isPasswordValid = await bcrypt.compare(password, user.password);
-  if (!isPasswordValid) {
-    return c.json({ error: "Invalid email or password" }, 400);
+// Login Route
+authRoute.openapi(
+  {
+    method: "post",
+    path: "/login",
+    summary: "Log in a user",
+    description: "Log in a user with email and password.",
+    request: {
+      body: {
+        content: {
+          "application/json": {
+            schema: loginSchema,
+          },
+        },
+      },
+    },
+    responses: {
+      200: {
+        description: "Login successful",
+      },
+      401: {
+        description: "Invalid email or password",
+      },
+    },
+    tags: API_TAGS,
+  },
+  async (c: Context) => {
+    const body = await c.req.json();
+
+    try {
+      const token = await login(body);
+      setTokenCookie(c, token.refreshToken);
+      return c.json({ status: "success", data: token.accessToken }, 200);
+    } catch (error: Error | any) {
+      return c.json(
+        { status: "failed", error: error.message || "Login failed!" },
+        401
+      );
+    }
   }
+);
 
-  // Generate JWT token
-  const token = generateToken(user.id);
+// Logout Route
+authRoute.openapi(
+  {
+    method: "post",
+    path: "/logout",
+    summary: "Log out a user",
+    description: "Log out a user by invalidating the refresh token.",
+    responses: {
+      200: {
+        description: "Logout successful",
+      },
+      401: {
+        description: "Refresh token is missing or invalid",
+      },
+      500: {
+        description: "Failed to log out",
+      },
+    },
+    tags: API_TAGS,
+  },
+  async (c: Context) => {
+    const refreshToken = getCookie(c, "refreshToken");
+    if (!refreshToken) {
+      return c.json({ message: "Refresh token is required" }, 401);
+    }
 
-  return c.json({ message: "Logged in successfully", token });
-});
+    try {
+      await logout(refreshToken);
+      setCookie(c, "refreshToken", "", {
+        httpOnly: true,
+        secure: true,
+        sameSite: "Strict",
+        maxAge: 0,
+      });
+      return c.json({ message: "Logout successful" }, 200);
+    } catch (error: Error | any) {
+      return c.json({ message: "Failed to logout" }, 500);
+    }
+  }
+);
 
-export { authRoutes };
+export default authRoute;
