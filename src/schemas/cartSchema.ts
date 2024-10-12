@@ -10,6 +10,7 @@ export const cartItemSchema = z.object({
     .int({ message: "Quantity must be an integer" })
     .min(1, { message: "Quantity must be at least 1" })
     .openapi({ example: 2 }),
+  price: z.number().int(),
 });
 
 export const updateCartItemSchema = z.object({
