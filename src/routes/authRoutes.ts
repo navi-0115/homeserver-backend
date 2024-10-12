@@ -10,8 +10,8 @@ const API_TAGS = ["Auth"];
 /**
  * Set access token cookie with 10 days expiration
  */
-const setTokenCookie = (c: Context, accessToken: string) => {
-  setCookie(c, "accessToken", accessToken, {
+const setTokenCookie = (c: Context, token: string) => {
+  setCookie(c, "token", token, {
     httpOnly: true,
     secure: true,
     sameSite: "Strict",
@@ -84,7 +84,7 @@ authRoute.openapi(
             schema: {
               type: "object",
               properties: {
-                accessToken: { type: "string" },
+                token: { type: "string" },
                 email: { type: "string" },
                 name: { type: "string" },
               },
@@ -102,12 +102,9 @@ authRoute.openapi(
     const body = await c.req.json();
 
     try {
-      const { accessToken, email, name } = await login(body);
-      setTokenCookie(c, accessToken);
-      return c.json(
-        { status: "success", data: { accessToken, email, name } },
-        200
-      );
+      const { token, email, name } = await login(body);
+      setTokenCookie(c, token);
+      return c.json({ status: "success", data: { token, email, name } }, 200);
     } catch (error: Error | any) {
       return c.json(
         { status: "failed", error: error.message || "Login failed!" },

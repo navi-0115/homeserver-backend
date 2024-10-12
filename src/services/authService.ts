@@ -48,9 +48,9 @@ export const login = async (data: z.infer<typeof loginSchema>) => {
     throw new Error("Email or password is incorrect!");
   }
 
-  const accessToken = await jwt.createAccessToken(user.id.toString());
+  const token = await jwt.createAccessToken(user.id.toString());
 
-  return { accessToken, email: user.email, name: user.name };
+  return { token, email: user.email, name: user.name };
 };
 
 /**
