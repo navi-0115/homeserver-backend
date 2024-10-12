@@ -1,6 +1,6 @@
 import type { Context } from "hono";
 import { OpenAPIHono } from "@hono/zod-openapi";
-import { login, register, regenToken, logout } from "../services/authService";
+import { login, register } from "../services/authService";
 import { registerSchema, loginSchema } from "../schemas/authSchema";
 import { getCookie, setCookie } from "hono/cookie";
 import prisma from "../../prisma/client";
@@ -94,7 +94,6 @@ authRoute.openapi(
 
     try {
       const token = await login(body);
-      setTokenCookie(c, token.refreshToken);
       return c.json({ status: "success", data: token.accessToken }, 200);
     } catch (error: Error | any) {
       return c.json(

@@ -1,5 +1,4 @@
 import { z } from "@hono/zod-openapi";
-import prisma from "../../prisma/client";
 import { registerSchema, loginSchema } from "../schemas/authSchema";
 import * as jwt from "../libs/jwt";
 import * as crypto from "../libs/crypto";
@@ -34,10 +33,10 @@ export const register = async (data: z.infer<typeof registerSchema>) => {
 };
 
 /**
- * Logs in a user and returns JWT access and refresh tokens.
+ * Logs in a user and returns JWT access token along with email and name.
  *
  * @param data The login data (email and password).
- * @returns The generated access and refresh tokens.
+ * @returns The generated access token, email, and name.
  * @throws {Error} If the credentials are invalid.
  */
 export const login = async (data: z.infer<typeof loginSchema>) => {
@@ -49,19 +48,15 @@ export const login = async (data: z.infer<typeof loginSchema>) => {
     throw new Error("Email or password is incorrect!");
   }
 
-  const userId = user.id.toString();
-  const [accessToken, refreshToken] = await Promise.all([
-    jwt.createAccessToken(userId),
-    jwt.createRefreshToken(userId),
-  ]);
+  const accessToken = await jwt.createAccessToken(user.id.toString());
 
-  return { accessToken, refreshToken };
+  return { accessToken, email: user.email, name: user.name };
 };
 
 /**
  * Retrieves the authenticated user from the database by user ID.
  *
- * @param userId The ID of the authenticated user.
+ * @param token The access token.
  * @returns The user profile.
  */
 export const getUserProfile = async (token: string) => {
@@ -73,9 +68,11 @@ export const getUserProfile = async (token: string) => {
   const user = await db.user.findUnique({
     where: { id: decodedToken.subject },
     select: {
+      id: true,
       name: true,
       email: true,
       avatarUrl: true,
+      createdAt: true,
     },
   });
 
