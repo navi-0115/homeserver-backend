@@ -1,20 +1,21 @@
 import type { Context } from "hono";
 import { OpenAPIHono } from "@hono/zod-openapi";
-import { login, register } from "../services/authService";
+import { login, register, getUserProfile } from "../services/authService";
 import { registerSchema, loginSchema } from "../schemas/authSchema";
-import { getCookie, setCookie } from "hono/cookie";
-import prisma from "../../prisma/client";
-import * as authService from "../services/authService";
+import { setCookie } from "hono/cookie";
 
 const authRoute = new OpenAPIHono();
 const API_TAGS = ["Auth"];
 
-const setTokenCookie = (c: Context, refreshToken: string) => {
-  setCookie(c, "refreshToken", refreshToken, {
+/**
+ * Set access token cookie with 10 days expiration
+ */
+const setTokenCookie = (c: Context, accessToken: string) => {
+  setCookie(c, "accessToken", accessToken, {
     httpOnly: true,
     secure: true,
     sameSite: "Strict",
-    maxAge: 60 * 60 * 24 * 30,
+    maxAge: 60 * 60 * 24 * 10, // 10 days expiration
   });
 };
 
@@ -24,8 +25,7 @@ authRoute.openapi(
     method: "post",
     path: "/register",
     summary: "Register a new user",
-    description:
-      "Register a new user with name, email, password, and confirm password.",
+    description: "Register a new user with name, email, and password.",
     request: {
       body: {
         content: {
@@ -56,9 +56,6 @@ authRoute.openapi(
         { status: "failed", error: error.message || "Registration failed!" },
         400
       );
-      select: {
-        name: true;
-      }
     }
   }
 );
@@ -82,6 +79,18 @@ authRoute.openapi(
     responses: {
       200: {
         description: "Login successful",
+        content: {
+          "application/json": {
+            schema: {
+              type: "object",
+              properties: {
+                accessToken: { type: "string" },
+                email: { type: "string" },
+                name: { type: "string" },
+              },
+            },
+          },
+        },
       },
       401: {
         description: "Invalid email or password",
@@ -93,8 +102,12 @@ authRoute.openapi(
     const body = await c.req.json();
 
     try {
-      const token = await login(body);
-      return c.json({ status: "success", data: token.accessToken }, 200);
+      const { accessToken, email, name } = await login(body);
+      setTokenCookie(c, accessToken);
+      return c.json(
+        { status: "success", data: { accessToken, email, name } },
+        200
+      );
     } catch (error: Error | any) {
       return c.json(
         { status: "failed", error: error.message || "Login failed!" },
@@ -143,13 +156,13 @@ authRoute.openapi(
     },
   },
   async (c) => {
-    const token = c.req.header("Authorization")?.replace("Bearer", "");
+    const token = c.req.header("Authorization")?.replace("Bearer", "").trim();
     if (!token) {
       return c.json({ error: "Unauthorized" }, 401);
     }
 
     try {
-      const result = await authService.getUserProfile(token);
+      const result = await getUserProfile(token);
 
       if (!result) {
         return c.json({ message: "User not found" }, 404);
@@ -158,47 +171,6 @@ authRoute.openapi(
       return c.json({ status: "success", data: result });
     } catch (error) {
       return c.json({ message: "Failed to fetch user data", error }, 500);
-    }
-  }
-);
-
-// Logout Route
-authRoute.openapi(
-  {
-    method: "post",
-    path: "/logout",
-    summary: "Log out a user",
-    description: "Log out a user by invalidating the refresh token.",
-    responses: {
-      200: {
-        description: "Logout successful",
-      },
-      401: {
-        description: "Refresh token is missing or invalid",
-      },
-      500: {
-        description: "Failed to log out",
-      },
-    },
-    tags: API_TAGS,
-  },
-  async (c: Context) => {
-    const refreshToken = getCookie(c, "refreshToken");
-    if (!refreshToken) {
-      return c.json({ message: "Refresh token is required" }, 401);
-    }
-
-    try {
-      await logout(refreshToken);
-      setCookie(c, "refreshToken", "", {
-        httpOnly: true,
-        secure: true,
-        sameSite: "Strict",
-        maxAge: 0,
-      });
-      return c.json({ message: "Logout successful" }, 200);
-    } catch (error: Error | any) {
-      return c.json({ message: "Failed to logout" }, 500);
     }
   }
 );
