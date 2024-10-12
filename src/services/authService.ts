@@ -142,3 +142,28 @@ export const regenToken = async (refreshToken: string): Promise<any> => {
 export const logout = async (refreshToken: string) => {
   return await processToken(refreshToken, "REVOKE");
 };
+
+/**
+ * Retrieves the authenticated user from the database by user ID.
+ *
+ * @param userId The ID of the authenticated user.
+ * @returns The user profile.
+ */
+export const getUserProfile = async (userId: string) => {
+  const user = await db.user.findUnique({
+    where: { id: userId },
+    select: {
+      id: true,
+      name: true,
+      email: true,
+      avatarUrl: true,
+      createdAt: true,
+    },
+  });
+
+  if (!user) {
+    throw new Error("User not found");
+  }
+
+  return user;
+};
