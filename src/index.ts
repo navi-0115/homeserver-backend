@@ -40,13 +40,7 @@ app.doc("/spec.json", {
 });
 
 // API routes
-app.use(
-  "*",
-  cors({
-    origin: "*",
-    credentials: true,
-  })
-);
+app.use("*", cors());
 app.route("/api/products", productsRoute);
 app.route("/auth", authRoutes);
 
