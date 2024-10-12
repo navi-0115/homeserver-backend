@@ -1,81 +1,112 @@
 import prisma from "../../prisma/client";
-import { z } from "@hono/zod-openapi";
-import {
-  getProductSchema,
-  addProductToCartSchema,
-} from "../schemas/cartSchema";
 
-/**
- * Get the user's cart.
- * @param userId - The ID of the user whose cart is being fetched.
- */
-export const getCart = async (userId: string) => {
-  const cartItems = await prisma.orderProduct.findMany({
-    where: { order: { userId } },
-    include: { product: true },
-  });
+export const cartService = {
+  async existingCart(userId: string, status: number, totalAmount: number) {
+    const existingCart = await prisma.order.findFirst({
+      where: { userId: userId },
+      orderBy: { createdAt: "desc" },
+      select: {
+        id: true,
+        status: true,
+        totalAmount: true,
+        products: {
+          include: {
+            product: true,
+          },
+          orderBy: { createdAt: "asc" },
+        },
+      },
+    });
 
-  return cartItems;
-};
-
-/**
- * Add a product to the user's cart.
- * @param userId - The ID of the user adding the product.
- * @param data - The product details to be added to the cart (productId, quantity).
- */
-export const addToCart = async (
-  userId: string,
-  data: z.infer<typeof addProductToCartSchema>
-) => {
-  const product = await prisma.product.findUnique({
-    where: { id: data.productId },
-  });
-
-  if (!product) {
-    throw new Error("Product not found");
-  }
-
-  const cartOrder = await prisma.order.findFirst({
-    where: { userId, status: 0 }, // 0 indicates the cart is still active
-  });
-
-  // Create an order if it doesn't exist for the user
-  const order = cartOrder
-    ? cartOrder
-    : await prisma.order.create({
-        data: { userId, status: 0, totalAmount: 0 },
+    if (!existingCart) {
+      const newCart = await prisma.order.create({
+        data: { userId: userId, status: status, totalAmount: totalAmount },
+        include: { products: { include: { product: true } } },
       });
+      return newCart;
+    }
 
-  const orderProduct = await prisma.orderProduct.create({
-    data: {
-      orderId: order.id,
-      productId: data.productId,
-      quantity: data.quantity,
-      price: product.price,
-    },
-  });
+    return existingCart;
+  },
 
-  return orderProduct;
-};
+  async addCart(
+    userId: string,
+    productId: string,
+    quantity: number,
+    price: number
+  ) {
+    const status = 0;
+    const totalAmount = 0;
 
-/**
- * Delete a product from the user's cart.
- * @param userId - The ID of the user removing the product.
- * @param productId - The ID of the product being removed from the cart.
- */
-export const deleteFromCart = async (productId: string) => {
-  const order = await prisma.order.findFirst({
-    where: { id: productId, status: 0 },
-    include: { products: true },
-  });
+    const existingCart = await this.existingCart(userId, status, totalAmount);
 
-  if (!order) {
-    throw new Error("No active cart found for user");
-  }
+    const existingItem = await prisma.orderProduct.findFirst({
+      where: {
+        orderId: existingCart.id,
+        productId: productId,
+      },
+    });
 
-  await prisma.orderProduct.delete({
-    where: { id: { productId } },
-  });
+    if (existingItem) {
+      const updatedItem = await prisma.orderProduct.update({
+        where: { id: existingItem.id },
+        data: {
+          quantity: {
+            increment: quantity,
+          },
+        },
+      });
+      return updatedItem;
+    } else {
+      const newItem = await prisma.orderProduct.create({
+        data: {
+          productId: productId,
+          quantity: quantity,
+          price: price,
+          orderId: existingCart.id,
+        },
+      });
+      return newItem;
+    }
+  },
 
-  return true;
+  async updateCart(itemId: string, quantity: number) {
+    const existingItem = await prisma.orderProduct.findUnique({
+      where: { id: itemId },
+      include: { product: true },
+    });
+
+    if (!existingItem) {
+      throw new Error(`Cart item with ID ${itemId} does not exist.`);
+    }
+
+    if (!existingItem.product) {
+      throw new Error(
+        `Product associated with cart item ${itemId} does not exist.`
+      );
+    }
+
+    const updatedItem = await prisma.orderProduct.update({
+      where: { id: itemId },
+      data: { quantity: quantity },
+    });
+
+    return updatedItem;
+  },
+
+  async removeCartProduct(productId: string) {
+    const existingItem = await prisma.orderProduct.findUnique({
+      where: { id: productId },
+    });
+
+    if (!existingItem) {
+      throw new Error(`Cart product with ID ${productId} does not exist.`);
+    }
+
+    await prisma.orderProduct.delete({
+      where: { id: productId },
+    });
+
+    return { message: `Success remove item.` };
+  },
 };
