@@ -21,6 +21,12 @@ app.get("/", (c) => {
   );
 });
 
+app.openAPIRegistry.registerComponent("securitySchemes", "BearerAuth", {
+  type: "http",
+  scheme: "bearer",
+  bearerFormat: "JWT",
+});
+
 // Swagger UI documentation
 app.get("/ui", swaggerUI({ url: "/spec.json" }));
 app.doc("/spec.json", {
@@ -37,6 +43,5 @@ app.doc("/spec.json", {
 app.use("*", cors());
 app.route("/api/products", productsRoute);
 app.route("/auth", authRoutes);
-app.route("/auth", userRoutes);
 
 export default app;

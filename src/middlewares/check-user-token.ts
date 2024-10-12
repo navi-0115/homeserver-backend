@@ -39,7 +39,7 @@ export const checkUserToken = createMiddleware<Env>(async (c, next) => {
     // Find user by ID
     const user = await prisma.user.findUnique({
       where: { id: userId },
-      select: { id: true, name: true, email: true }, // Adjust as needed
+      select: { id: true, name: true, email: true },
     });
 
     if (!user) {

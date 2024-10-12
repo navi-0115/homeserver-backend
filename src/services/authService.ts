@@ -59,105 +59,23 @@ export const login = async (data: z.infer<typeof loginSchema>) => {
 };
 
 /**
- * Processes a refresh token by either revoking it or regenerating a new token pair.
- *
- * @param refreshToken The refresh token to process.
- * @param action The action to take on the token. If "REVOKE", the token is revoked.
- * If "REGENERATE", a new token pair is generated and returned.
- * @returns If action is "REVOKE", returns a boolean indicating success. If action is
- * "REGENERATE", returns an object with the new access and refresh tokens.
- * @throws {Error} If the token is invalid or expired.
- */
-const processToken = async (
-  refreshToken: string,
-  action: "REVOKE" | "REGENERATE"
-) => {
-  const decodedToken = await jwt.validateToken(refreshToken);
-  if (!decodedToken?.subject) {
-    throw new Error("Invalid or expired refresh token");
-  }
-
-  const userId = parseInt(decodedToken.subject, 10);
-
-  return await db.$transaction(async (prisma: any) => {
-    const tokenRecords = await prisma.userToken.findMany({
-      where: {
-        userId,
-        revoked: false,
-        expiresAt: { gte: new Date() },
-      },
-    });
-
-    const validTokenRecord = await Promise.all(
-      tokenRecords.map(async (tokenRecord: any) => {
-        const isValidToken = await crypto.verifyValue(
-          refreshToken,
-          tokenRecord.token
-        );
-        return isValidToken ? tokenRecord : null;
-      })
-    ).then((results) => results.find((record) => record !== null));
-
-    if (!validTokenRecord) {
-      throw new Error("Refresh token is invalid or already revoked");
-    }
-
-    await prisma.userToken.update({
-      where: { id: validTokenRecord.id },
-      data: { revoked: true },
-    });
-
-    await prisma.userToken.deleteMany({
-      where: { userId, revoked: true },
-    });
-
-    if (action === "REGENERATE") {
-      const [newAccessToken, newRefreshToken] = await Promise.all([
-        jwt.createAccessToken(userId.toString()),
-        jwt.createRefreshToken(userId.toString()),
-      ]);
-
-      return { accessToken: newAccessToken, refreshToken: newRefreshToken };
-    }
-
-    return true;
-  });
-};
-
-/**
- * Regenerates a new access and refresh token pair for the given refresh token.
- * @param refreshToken The refresh token to use for regenerating the tokens.
- * @returns The new access and refresh token pair as an object with `accessToken` and `refreshToken` properties.
- */
-export const regenToken = async (refreshToken: string): Promise<any> => {
-  return await processToken(refreshToken, "REGENERATE");
-};
-
-/**
- * Logs out a user by invalidating their refresh token.
- *
- * @param refreshToken The refresh token to revoke.
- * @returns A boolean indicating success.
- */
-export const logout = async (refreshToken: string) => {
-  return await processToken(refreshToken, "REVOKE");
-};
-
-/**
  * Retrieves the authenticated user from the database by user ID.
  *
  * @param userId The ID of the authenticated user.
  * @returns The user profile.
  */
-export const getUserProfile = async (userId: string) => {
+export const getUserProfile = async (token: string) => {
+  const decodedToken = await jwt.validateToken(token);
+  if (!decodedToken?.subject) {
+    throw new Error("Invalid or expired access token");
+  }
+
   const user = await db.user.findUnique({
-    where: { id: userId },
+    where: { id: decodedToken.subject },
     select: {
-      id: true,
       name: true,
       email: true,
       avatarUrl: true,
-      createdAt: true,
     },
   });
 

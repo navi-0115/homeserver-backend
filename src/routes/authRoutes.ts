@@ -3,6 +3,8 @@ import { OpenAPIHono } from "@hono/zod-openapi";
 import { login, register, regenToken, logout } from "../services/authService";
 import { registerSchema, loginSchema } from "../schemas/authSchema";
 import { getCookie, setCookie } from "hono/cookie";
+import prisma from "../../prisma/client";
+import * as authService from "../services/authService";
 
 const authRoute = new OpenAPIHono();
 const API_TAGS = ["Auth"];
@@ -99,6 +101,64 @@ authRoute.openapi(
         { status: "failed", error: error.message || "Login failed!" },
         401
       );
+    }
+  }
+);
+
+// Authenticated User Profile Route - /auth/me
+authRoute.openapi(
+  {
+    method: "get",
+    path: "/me",
+    summary: "Get authenticated user profile",
+    security: [{ BearerAuth: [] }],
+    description:
+      "Fetches the profile of the authenticated user using their JWT token.",
+    tags: API_TAGS,
+    responses: {
+      200: {
+        description: "Authenticated user profile",
+        content: {
+          "application/json": {
+            schema: {
+              type: "object",
+              properties: {
+                id: { type: "string", example: "cuid_xxxxx" },
+                name: { type: "string", example: "John Doe" },
+                email: { type: "string", example: "john@example.com" },
+                avatarUrl: {
+                  type: "string",
+                  example: "https://example.com/avatar.jpg",
+                },
+              },
+            },
+          },
+        },
+      },
+      401: {
+        description: "Unauthorized, token missing or invalid",
+      },
+      404: {
+        description: "User not found",
+      },
+    },
+  },
+  async (c) => {
+    const token = c.req.header("Authorization")?.replace("Bearer", "");
+    if (!token) {
+      return c.json({ error: "Unauthorized" }, 401);
+    }
+
+    try {
+      const result = await authService.getUserProfile(token);
+
+      if (!result) {
+        return c.json({ message: "User not found" }, 404);
+      }
+
+      return c.json({ status: "success", data: result });
+    } catch (error) {
+      return c.json({ message: "Failed to fetch user data", error }, 500);
     }
   }
 );
