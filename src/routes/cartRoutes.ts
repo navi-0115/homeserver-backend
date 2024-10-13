@@ -35,7 +35,7 @@ cartRoute.openapi(
       const status = 0;
       const totalAmount = 0;
 
-      const cart = await cartService.existingCart(user.id, status, totalAmount);
+      const cart = await cartService.existingCart(user.id);
 
       return c.json({ cart }, 200);
     } catch (error: Error | any) {

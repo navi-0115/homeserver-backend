@@ -56,6 +56,8 @@ model CartItem {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  @@map("cartItems")
 }
 
 model Cart {
@@ -68,6 +70,8 @@ model Cart {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  @@map("carts")
 }
 
 // model Order {

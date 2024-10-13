@@ -1,8 +1,8 @@
 import prisma from "../../prisma/client";
 
 export const cartService = {
-  async existingCart(userId: string, status: number, totalAmount: number) {
-    const existingCart = await prisma.order.findFirst({
+  async existingCart(userId: string) {
+    const existingCart = await prisma.cart.findFirst({
       where: { userId: userId },
       orderBy: { createdAt: "desc" },
       select: {
@@ -19,9 +19,9 @@ export const cartService = {
     });
 
     if (!existingCart) {
-      const newCart = await prisma.order.create({
-        data: { userId: userId, status: status, totalAmount: totalAmount },
-        include: { products: { include: { product: true } } },
+      const newCart = await prisma.cart.create({
+        data: { userId: userId },
+        include: { cart: { include: { product: true } } },
       });
       return newCart;
     }

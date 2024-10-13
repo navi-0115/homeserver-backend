@@ -69,22 +69,18 @@ async function main() {
   });
 
   // Create an order for user1
-  const order1 = await prisma.order.create({
+  const order1 = await prisma.cart.create({
     data: {
-      status: 1,
-      totalAmount: 3700000,
       userId: user1.id,
-      products: {
+      items: {
         create: [
           {
             productId: product1.id,
             quantity: 1,
-            price: product1.price,
           },
           {
             productId: product2.id,
             quantity: 1,
-            price: product2.price,
           },
         ],
       },
@@ -92,17 +88,14 @@ async function main() {
   });
 
   // Create an order for user2
-  const order2 = await prisma.order.create({
+  const order2 = await prisma.cart.create({
     data: {
-      status: 2,
-      totalAmount: 800000,
       userId: user2.id,
-      products: {
+      items: {
         create: [
           {
             productId: product3.id,
             quantity: 1,
-            price: product3.price,
           },
         ],
       },
