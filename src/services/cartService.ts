@@ -7,9 +7,7 @@ export const cartService = {
       orderBy: { createdAt: "desc" },
       select: {
         id: true,
-        status: true,
-        totalAmount: true,
-        products: {
+        items: {
           include: {
             product: true,
           },
@@ -21,7 +19,7 @@ export const cartService = {
     if (!existingCart) {
       const newCart = await prisma.cart.create({
         data: { userId: userId },
-        include: { cart: { include: { product: true } } },
+        include: { items: { include: { product: true } } },
       });
       return newCart;
     }
@@ -38,17 +36,17 @@ export const cartService = {
     const status = 0;
     const totalAmount = 0;
 
-    const existingCart = await this.existingCart(userId, status, totalAmount);
+    const existingCart = await this.existingCart(userId);
 
-    const existingItem = await prisma.orderProduct.findFirst({
+    const existingItem = await prisma.cartItem.findFirst({
       where: {
-        orderId: existingCart.id,
+        cartId: existingCart.id,
         productId: productId,
       },
     });
 
     if (existingItem) {
-      const updatedItem = await prisma.orderProduct.update({
+      const updatedItem = await prisma.cartItem.update({
         where: { id: existingItem.id },
         data: {
           quantity: {
@@ -58,12 +56,11 @@ export const cartService = {
       });
       return updatedItem;
     } else {
-      const newItem = await prisma.orderProduct.create({
+      const newItem = await prisma.cartItem.create({
         data: {
           productId: productId,
           quantity: quantity,
-          price: price,
-          orderId: existingCart.id,
+          cartId: existingCart.id,
         },
       });
       return newItem;
@@ -71,7 +68,7 @@ export const cartService = {
   },
 
   async updateCart(itemId: string, quantity: number) {
-    const existingItem = await prisma.orderProduct.findUnique({
+    const existingItem = await prisma.cartItem.findUnique({
       where: { id: itemId },
       include: { product: true },
     });
@@ -86,7 +83,7 @@ export const cartService = {
       );
     }
 
-    const updatedItem = await prisma.orderProduct.update({
+    const updatedItem = await prisma.cartItem.update({
       where: { id: itemId },
       data: { quantity: quantity },
     });
@@ -95,7 +92,7 @@ export const cartService = {
   },
 
   async removeCartProduct(productId: string) {
-    const existingItem = await prisma.orderProduct.findUnique({
+    const existingItem = await prisma.cartItem.findUnique({
       where: { id: productId },
     });
 
@@ -103,7 +100,7 @@ export const cartService = {
       throw new Error(`Cart product with ID ${productId} does not exist.`);
     }
 
-    await prisma.orderProduct.delete({
+    await prisma.cartItem.delete({
       where: { id: productId },
     });
 
