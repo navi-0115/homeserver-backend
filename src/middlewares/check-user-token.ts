@@ -1,56 +1,30 @@
-// middleware/checkUserToken.ts
 import { createMiddleware } from "hono/factory";
-import { getCookie } from "hono/cookie";
-import prisma from "../../prisma/client";
-import { validateToken } from "../libs/jwt";
+import { validateToken } from "../libs/jwt"; // Assuming you have a validateToken function
+import prisma from "../../prisma/client"; // Adjust the import based on your setup
 
-type Env = {
-  Variables: {
-    user: {
-      id: string;
-    };
-  };
-};
-
-export const checkUserToken = createMiddleware<Env>(async (c, next) => {
-  const tokenCookie = getCookie(c, "refreshToken");
+export const checkUserToken = createMiddleware(async (c, next) => {
   const authHeader = c.req.header("Authorization");
 
-  // Get the token either from cookie or header
-  const token = tokenCookie
-    ? tokenCookie
-    : authHeader
-    ? authHeader.split(" ")[1]
-    : null;
-
-  if (!token) {
-    return c.json({ message: "Not allowed. Token is required" }, 401);
+  if (!authHeader) {
+    return c.json({ message: "Authorization header is missing" }, 401);
   }
 
-  try {
-    const decodedToken = await validateToken(token);
+  const token = authHeader.replace("Bearer ", "");
+  const decodedToken = await validateToken(token);
 
-    if (!decodedToken?.subject) {
-      return c.json({ message: "Not allowed. Token is invalid" }, 401);
-    }
-
-    const userId = decodedToken.subject;
-
-    // Find user by ID
-    const user = await prisma.user.findUnique({
-      where: { id: userId },
-      select: { id: true, name: true, email: true },
-    });
-
-    if (!user) {
-      return c.json({ message: "User not found" }, 404);
-    }
-
-    // Set user in context
-    c.set("user", user);
-
-    await next();
-  } catch (error) {
-    return c.json({ message: "Token validation failed" }, 401);
+  if (!decodedToken?.subject) {
+    return c.json({ message: "Invalid or missing token" }, 401);
   }
+
+  const user = await prisma.user.findUnique({
+    where: { id: decodedToken.subject },
+  });
+
+  if (!user) {
+    return c.json({ message: "User not found" }, 404);
+  }
+
+  // Set the user object in the context
+  c.set("user", user);
+  await next();
 });

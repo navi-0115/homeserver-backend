@@ -1,109 +1,67 @@
 import prisma from "../../prisma/client";
 
 export const cartService = {
-  async existingCart(userId: string) {
+  async getExistingCart(userId: string) {
     const existingCart = await prisma.cart.findFirst({
-      where: { userId: userId },
+      where: { userId },
       orderBy: { createdAt: "desc" },
       select: {
         id: true,
         items: {
           include: {
-            product: true,
+            product: {
+              select: {
+                id: true,
+                name: true,
+                imageUrl: true,
+                price: true,
+              },
+            },
           },
           orderBy: { createdAt: "asc" },
         },
       },
     });
-
-    if (!existingCart) {
-      const newCart = await prisma.cart.create({
-        data: { userId: userId },
-        include: { items: { include: { product: true } } },
-      });
-      return newCart;
-    }
-
+    console.error("error existing");
     return existingCart;
   },
 
-  async addCart(
-    userId: string,
-    productId: string,
-    quantity: number,
-    price: number
-  ) {
-    const status = 0;
-    const totalAmount = 0;
-
-    const existingCart = await this.existingCart(userId);
-
-    const existingItem = await prisma.cartItem.findFirst({
-      where: {
-        cartId: existingCart.id,
-        productId: productId,
-      },
+  async createNewCart(userId: string) {
+    const newCart = await prisma.cart.create({
+      data: { userId },
+      include: { items: { include: { product: true } } },
     });
+    return newCart;
+  },
+
+  async addItemToCart(userId: string, productId: string, quantity: number) {
+    const existingCart = await this.getExistingCart(userId);
+
+    if (!existingCart) {
+      throw new Error("Shopping cart is unavailable");
+    }
+
+    const existingItem = existingCart.items.find(
+      (item) => item.productId === productId
+    );
 
     if (existingItem) {
-      const updatedItem = await prisma.cartItem.update({
+      // Update quantity of existing item
+      await prisma.cartItem.update({
         where: { id: existingItem.id },
-        data: {
-          quantity: {
-            increment: quantity,
-          },
-        },
+        data: { quantity: existingItem.quantity + quantity },
       });
-      return updatedItem;
     } else {
-      const newItem = await prisma.cartItem.create({
+      // Add new item to cart
+      await prisma.cartItem.create({
         data: {
-          productId: productId,
-          quantity: quantity,
           cartId: existingCart.id,
+          productId,
+          quantity,
         },
       });
-      return newItem;
-    }
-  },
-
-  async updateCart(itemId: string, quantity: number) {
-    const existingItem = await prisma.cartItem.findUnique({
-      where: { id: itemId },
-      include: { product: true },
-    });
-
-    if (!existingItem) {
-      throw new Error(`Cart item with ID ${itemId} does not exist.`);
     }
 
-    if (!existingItem.product) {
-      throw new Error(
-        `Product associated with cart item ${itemId} does not exist.`
-      );
-    }
-
-    const updatedItem = await prisma.cartItem.update({
-      where: { id: itemId },
-      data: { quantity: quantity },
-    });
-
-    return updatedItem;
-  },
-
-  async removeCartProduct(productId: string) {
-    const existingItem = await prisma.cartItem.findUnique({
-      where: { id: productId },
-    });
-
-    if (!existingItem) {
-      throw new Error(`Cart product with ID ${productId} does not exist.`);
-    }
-
-    await prisma.cartItem.delete({
-      where: { id: productId },
-    });
-
-    return { message: `Success remove item.` };
+    return this.getExistingCart(userId); // Return updated cart
   },
 };
